@@ -470,8 +470,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4357c5298feabd2459c40291b92b3393, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _dayNum: 0
-  _dayDuration: 0
+  _dayNum: 30
+  _dayDuration: 240
   _statsBaseDataList:
   - {fileID: 11400000, guid: a40d916060b954742bcf9b9c87692690, type: 2}
   - {fileID: 11400000, guid: cce9fce71729e384d857ecf2226a4ba9, type: 2}
@@ -485,6 +485,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1554935589}
+  - component: {fileID: 1554935590}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -507,6 +508,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1554935590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554935588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18969de22872e8e4fab011006a08f8fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _dataManager: {fileID: 1206933173}
 --- !u!1 &1746554587
 GameObject:
   m_ObjectHideFlags: 0

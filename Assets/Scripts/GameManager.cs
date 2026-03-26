@@ -3,12 +3,14 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     private float _morningDuration, _workingDurationBeforeNoon, _lunchBreakDuration, _workingDurationAfternoon, _eveningDuration, _nightDuration, _timer;
+    private bool _gameStarted;
 
     [SerializeField] private DataManager _dataManager;
 
     private void Start()
     {
         _timer = 0f;
+        Time.timeScale = 0f;
 
         //  Initialising time periods
         float dayDuration = _dataManager.GetDayDuration();
@@ -17,11 +19,13 @@ public class GameManager : MonoBehaviour
         _lunchBreakDuration = dayDuration / 24;
         _workingDurationAfternoon = dayDuration / 24 * 4;
         _eveningDuration = dayDuration / 24 * 4;
-        _nightDuration = dayDuration / 24 * 9; 
+        _nightDuration = dayDuration / 24 * 9;
     }
 
     private void Update()
-    { 
+    {
         _timer += Time.deltaTime;
     }
+
+
 }
