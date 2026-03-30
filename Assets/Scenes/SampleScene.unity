@@ -482,6 +482,16 @@ MonoBehaviour:
   _workQuotaDataList:
   - {fileID: 11400000, guid: aea41a72eb3e3124bbdea5a03914a06d, type: 2}
   - {fileID: 11400000, guid: ab706ec322bb74240baffd2f622b38d7, type: 2}
+  _baseWorkPoints: 1
+  _healthDeductionDuringWork: 1
+  _sanityDeductionDuringWork: 1
+  _healthAdditionDuringWorkout: 4
+  _sanityAdditionDuringHangout: 4
+  _moneyDeductionDuringEveningActivities: 2
+  _healthAdditionDuringSleep: 10
+  _sanityAdditionDuringSleep: 10
+  _healthAdditionDuringLunchBreak: 5
+  _sanityAdditionDuringLunchBreak: 5
   _gameManager: {fileID: 1554935590}
 --- !u!1 &1554935588
 GameObject:

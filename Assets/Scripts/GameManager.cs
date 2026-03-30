@@ -20,23 +20,6 @@ public class GameManager : MonoBehaviour
     //  Event flags
     private bool _onMorningTriggered, _onWorkingBeforeNoonTriggered; 
 
-    [Header("Working-related stats")]
-    [SerializeField] private int _baseWorkPoints;
-    [SerializeField] private int _healthDeductionDuringWork;
-    [SerializeField] private int _sanityDeductionDuringWork;
-
-    [Header("Evening activities-related stats")]
-    [SerializeField] private int _healthAdditionDuringWorkout;
-    [SerializeField] private int _sanityAdditionDuringHangout;
-    [SerializeField] private int _moneyDeductionDuringEveningActivities;
-
-    [Header("Resting-related stats")]
-    [SerializeField] private int _healthAdditionDuringSleep;
-    [SerializeField] private int _sanityAdditionDuringSleep;
-    [SerializeField] private int _healthAdditionDuringLunchBreak;
-    [SerializeField] private int _sanityAdditionDuringLunchBreak;
-
-
     [SerializeField] private float _firstDayStartingTime;
     
     [SerializeField] private DataManager _dataManager;
@@ -45,12 +28,12 @@ public class GameManager : MonoBehaviour
     public static event Action<bool, bool> OnWorkingBeforeNoon;
 
     public static event Action<bool, bool, bool> OnWork;
-    public static event Action<int, int, int> OnWorkStatsChange;
+    public static event Action OnWorkStatsChange;
     
     public static event Action<bool, bool> OnEveningActivities;
-    public static event Action<int, int, int> OnEveningActivitiesStatsChange;
+    public static event Action<bool, bool> OnEveningActivitiesStatsChange;
 
-    public static event Action<int, int> OnRestingStatsChange;
+    public static event Action<bool, bool> OnRestingStatsChange;
 
     public static event Action<int> OnDayEnd;
     public static event Action<List<StatParentRuntime>> OnGameEnd;
@@ -169,7 +152,7 @@ public class GameManager : MonoBehaviour
                     }
                     else
                     {
-                        if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _moneyDeductionDuringEveningActivities) {
+                        if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _dataManager.GetMoneyDeductionDuringEveningActivities()) {
                             StartCoroutine(EnableWorkingOutState());
                         }
                     }
@@ -179,7 +162,7 @@ public class GameManager : MonoBehaviour
         else {
             if (_evening)
             {
-                if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _moneyDeductionDuringEveningActivities)
+                if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _dataManager.GetMoneyDeductionDuringEveningActivities())
                 {
                     StartCoroutine(EnableHangingOutState());
                 }
@@ -189,7 +172,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator EnableWorkingState() {
         _workingStateTimer = 0f;
-        OnWorkStatsChange?.Invoke(_baseWorkPoints, _healthDeductionDuringWork, _sanityDeductionDuringWork);
+        OnWorkStatsChange?.Invoke();
         if (!_working) {
             _working = true;
             StartCoroutine(WorkingState());
@@ -253,7 +236,7 @@ public class GameManager : MonoBehaviour
     //  fix this sht
     private IEnumerator RestingState(bool havingLunchBreak, bool sleeping) {
         float passivePointsTimer = 0f;
-        while (!_working)
+        while (!_working )
         {
             if (passivePointsTimer < 1)
             {
@@ -263,11 +246,7 @@ public class GameManager : MonoBehaviour
             else
             {
                 passivePointsTimer = 0f;
-                if (havingLunchBreak) {
-                    OnRestingStatsChange?.Invoke(_healthAdditionDuringLunchBreak, _sanityAdditionDuringLunchBreak);
-                } else if (sleeping) {
-                    OnRestingStatsChange?.Invoke(_healthAdditionDuringSleep, _sanityAdditionDuringSleep);
-                }
+                OnRestingStatsChange?.Invoke(havingLunchBreak, sleeping); 
             }
         }
     }
@@ -283,7 +262,7 @@ public class GameManager : MonoBehaviour
                 yield return null;
             } else {
                 passivePointsTimer = 0f;
-                OnEveningActivitiesStatsChange?.Invoke(_healthAdditionDuringWorkout, 0, _moneyDeductionDuringEveningActivities);
+                OnEveningActivitiesStatsChange?.Invoke(_workingOut, _hangingOut);
             }
         }
 
@@ -312,7 +291,7 @@ public class GameManager : MonoBehaviour
             else
             {
                 passivePointsTimer = 0f;
-                OnEveningActivitiesStatsChange?.Invoke(0, _sanityAdditionDuringHangout, _moneyDeductionDuringEveningActivities);
+                OnEveningActivitiesStatsChange?.Invoke(_workingOut, _hangingOut);
             }
         }
 
@@ -328,11 +307,4 @@ public class GameManager : MonoBehaviour
             OnEveningActivities?.Invoke(false, false);
         }
     }
-
-
-
-
-
-
-
 }

@@ -31,6 +31,22 @@ public class DataManager : MonoBehaviour
     [SerializeField] private List<WorkQuotaData> _workQuotaDataList;
     private List<WorkQuotaRuntime> _workQuotaRuntimeList = new List<WorkQuotaRuntime>();
 
+    [Header("Working-related stats")]
+    [SerializeField] private int _baseWorkPoints;
+    [SerializeField] private int _healthDeductionDuringWork;
+    [SerializeField] private int _sanityDeductionDuringWork;
+
+    [Header("Evening activities-related stats")]
+    [SerializeField] private int _healthAdditionDuringWorkout;
+    [SerializeField] private int _sanityAdditionDuringHangout;
+    [SerializeField] private int _moneyDeductionDuringEveningActivities;
+
+    [Header("Resting-related stats")]
+    [SerializeField] private int _healthAdditionDuringSleep;
+    [SerializeField] private int _sanityAdditionDuringSleep;
+    [SerializeField] private int _healthAdditionDuringLunchBreak;
+    [SerializeField] private int _sanityAdditionDuringLunchBreak;
+
     [Header("Managers")]
     [SerializeField] GameManager _gameManager;
 
@@ -57,7 +73,10 @@ public class DataManager : MonoBehaviour
         InputHandler.WASDEntered += HandleSequenceQTEInput;
 
         GameManager.OnMorning += HandlingOnMorning;
-        GameManager.OnWorkingBeforeNoon += HandlingOnWorkingBeforeNoon; 
+        GameManager.OnWorkingBeforeNoon += HandlingOnWorkingBeforeNoon;
+        GameManager.OnWorkStatsChange += HandlingOnWorkStatsChange;
+        GameManager.OnEveningActivitiesStatsChange += HandlingOnEveningActivitiesStatsChange;
+        GameManager.OnRestingStatsChange += HandlingOnRestingStatsChange;
     }
 
     private void OnDisable()
@@ -66,15 +85,18 @@ public class DataManager : MonoBehaviour
 
         GameManager.OnMorning -= HandlingOnMorning;
         GameManager.OnWorkingBeforeNoon -= HandlingOnWorkingBeforeNoon;
+        GameManager.OnWorkStatsChange += HandlingOnWorkStatsChange;
+        GameManager.OnEveningActivitiesStatsChange -= HandlingOnEveningActivitiesStatsChange;
+        GameManager.OnRestingStatsChange -= HandlingOnRestingStatsChange;
     }
 
-    //  Public properties
+    //  Getters
     public float GetDayDuration() => _dayDuration;
-    
     public int GetDayNum() => _dayNum;
-
     public List<StatParentRuntime> GetStatsRuntimeDataList() => _statsRuntimeDataList;
+    public int GetMoneyDeductionDuringEveningActivities() => _moneyDeductionDuringEveningActivities;
 
+    //  Time period handlers
     private void HandlingOnMorning(bool flag) {
         EnablingQTE(flag);
     }
@@ -86,6 +108,43 @@ public class DataManager : MonoBehaviour
         }
         InitialiseWorkQuota(firstDay);
     }
+
+    //  Stats change handlers
+    private void HandlingOnWorkStatsChange()
+    {
+        foreach (WorkQuotaRuntime workQuotaRuntimeData in _workQuotaRuntimeList)
+        {
+            workQuotaRuntimeData.IncreaseCurrentWorkProgress((int)Mathf.Round((_baseWorkPoints * (_statsRuntimeDataList[1] as MultiplierRelatedStatsRuntime).GetWorkPointsMultiplier() * (_statsRuntimeDataList[2] as MultiplierRelatedStatsRuntime).GetWorkPointsMultiplier())));
+        }
+        _statsRuntimeDataList[1].DecreaseValue(_healthDeductionDuringWork);
+        _statsRuntimeDataList[2].DecreaseValue(_sanityDeductionDuringWork);
+    }
+
+    private void HandlingOnEveningActivitiesStatsChange(bool workingOut, bool hangingOut) {
+        if (workingOut)
+        {
+            _statsRuntimeDataList[1].DecreaseValue(_healthAdditionDuringWorkout);
+        }
+        else if (hangingOut) {
+            _statsRuntimeDataList[2].DecreaseValue(_sanityAdditionDuringHangout);
+        }
+        _statsRuntimeDataList[0].DecreaseValue(_moneyDeductionDuringEveningActivities);
+    }
+
+    private void HandlingOnRestingStatsChange(bool havingLunchBreak, bool sleeping)
+    {
+        if (havingLunchBreak)
+        {
+            _statsRuntimeDataList[1].GainValue(_healthAdditionDuringSleep);
+            _statsRuntimeDataList[2].GainValue(_sanityAdditionDuringSleep);
+        }
+        else if (sleeping)
+        {
+            _statsRuntimeDataList[1].GainValue(_healthAdditionDuringLunchBreak);
+            _statsRuntimeDataList[2].GainValue(_sanityAdditionDuringLunchBreak);
+        }
+    }
+
     //  QTE related methods
     private void EnablingQTE(bool flag) { 
         _QTEAvailable = flag;
@@ -178,16 +237,22 @@ public class DataManager : MonoBehaviour
     }
 
     private void InitialiseWorkQuota(bool firstDay) {
-        if (_workQuotaRuntimeList[0].GetQuotaMet()) {
-            _workQuotaRuntimeList[0].IncreaseWorkQuota();
-        }
-        _workQuotaRuntimeList[0].InitialiseWorkProgress();
-        if (_gameManager.GetCurrentDayNum() % 7 == 0) {
-            if (_workQuotaRuntimeList[1].GetQuotaMet())
+        if (!firstDay) {
+            if (_workQuotaRuntimeList[0].GetQuotaMet())
             {
-                _workQuotaRuntimeList[1].IncreaseWorkQuota();
+                _workQuotaRuntimeList[0].IncreaseWorkQuota();
             }
-            _workQuotaRuntimeList[1].InitialiseWorkProgress();
+            _workQuotaRuntimeList[0].InitialiseWorkProgress();
+            if (_gameManager.GetCurrentDayNum() % 7 == 0)
+            {
+                if (_workQuotaRuntimeList[1].GetQuotaMet())
+                {
+                    _workQuotaRuntimeList[1].IncreaseWorkQuota();
+                }
+                _workQuotaRuntimeList[1].InitialiseWorkProgress();
+            }
         }
     }
+
+
 }
