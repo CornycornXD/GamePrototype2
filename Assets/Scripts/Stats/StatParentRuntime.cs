@@ -26,4 +26,6 @@ public class StatParentRuntime
             _currentValue = 0;
         }
     }
+
+    public float GetCurrentValue() => _currentValue;
 }

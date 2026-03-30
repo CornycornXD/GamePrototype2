@@ -7,8 +7,8 @@ public class InputHandler : MonoBehaviour
 {
     private PlayerInputActions _input;
 
-    public event Action<bool> OnClickPerformed;
-    public event Action<char> WASDEntered;
+    public static event Action<int> OnClickPerformed;
+    public static event Action<char> WASDEntered;
 
     private void Awake()
     {
@@ -42,11 +42,11 @@ public class InputHandler : MonoBehaviour
 
     private void HandleLeftClick(InputAction.CallbackContext context)
     {
-        OnClickPerformed?.Invoke(true);
+        OnClickPerformed?.Invoke(0);
     }
 
     private void HandleRightClick(InputAction.CallbackContext context) {
-        OnClickPerformed?.Invoke(false);
+        OnClickPerformed?.Invoke(1);
     }
     private void HandleWEntered(InputAction.CallbackContext context) {
         WASDEntered?.Invoke('W');

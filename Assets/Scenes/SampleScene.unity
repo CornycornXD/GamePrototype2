@@ -476,6 +476,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a40d916060b954742bcf9b9c87692690, type: 2}
   - {fileID: 11400000, guid: cce9fce71729e384d857ecf2226a4ba9, type: 2}
   - {fileID: 11400000, guid: 9478a61020b65854e8060f5357044c59, type: 2}
+  _QTEInputNum: 10
+  _moneyPenalty: 40
+  _sanityPenalty: 30
+  _workQuotaDataList:
+  - {fileID: 11400000, guid: aea41a72eb3e3124bbdea5a03914a06d, type: 2}
+  - {fileID: 11400000, guid: ab706ec322bb74240baffd2f622b38d7, type: 2}
+  _gameManager: {fileID: 1554935590}
 --- !u!1 &1554935588
 GameObject:
   m_ObjectHideFlags: 0
@@ -520,6 +527,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18969de22872e8e4fab011006a08f8fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _baseWorkPoints: 1
+  _healthDeductionDuringWork: 1
+  _sanityDeductionDuringWork: 1
+  _healthAdditionDuringWorkout: 1
+  _sanityAdditionDuringHangout: 1
+  _moneyDeductionDuringEveningActivities: 2
+  _healthAdditionDuringSleep: 10
+  _sanityAdditionDuringSleep: 10
+  _healthAdditionDuringLunchBreak: 5
+  _sanityAdditionDuringLunchBreak: 5
+  _firstDayStartingTime: 60
   _dataManager: {fileID: 1206933173}
 --- !u!1 &1746554587
 GameObject:

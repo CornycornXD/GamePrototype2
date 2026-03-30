@@ -42,4 +42,6 @@ public class MultiplierRelatedStatsRuntime : StatParentRuntime
             _workPointsMultiplier = 0.25f;
         }
     }
+
+    public float GetWorkPointsMultiplier() => _workPointsMultiplier; 
 }
