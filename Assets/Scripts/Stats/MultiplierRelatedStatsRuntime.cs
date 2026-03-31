@@ -3,12 +3,27 @@ using UnityEngine;
 
 public class MultiplierRelatedStatsRuntime : StatParentRuntime
 {
+    //  Private fields
     protected float _workPointsMultiplier;
+    private int _deductionDuringWork, _additionDuringLunchBreak, _additionDuringEveningActivity, _additionDuringSleep;
 
+    //  Constructor
     public MultiplierRelatedStatsRuntime(MultiplierRelatedStatsData data) : base(data) {
         _workPointsMultiplier = 1f;
+        _deductionDuringWork = data.GetDeductionDuringWork();
+        _additionDuringLunchBreak = data.GetAdditionDuringLunchBreak();
+        _additionDuringEveningActivity = data.GetAdditionDuringEveningActivity();
+        _additionDuringSleep = data.GetAdditionDuringSleep();
     }
 
+    //  Getters
+    public float GetWorkPointsMultiplier() => _workPointsMultiplier;
+    public int GetDeductionDuringWork() => _deductionDuringWork;
+    public int GetAdditionDuringLunchBreak() => _additionDuringLunchBreak;
+    public int GetAdditionDuringEveningActivity() => _additionDuringEveningActivity;
+    public int GetAdditionDuringSleep() => _additionDuringSleep;
+
+    //  Public methods
     public override void GainValue(float value)
     {
         base.GainValue(value);
@@ -43,5 +58,5 @@ public class MultiplierRelatedStatsRuntime : StatParentRuntime
         }
     }
 
-    public float GetWorkPointsMultiplier() => _workPointsMultiplier; 
+
 }
