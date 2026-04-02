@@ -10,7 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c38fece6d9cfa0a47be6bd053807a732, type: 3}
-  m_Name: Physical Health
+  m_Name: Health
   m_EditorClassIdentifier: 
   _baseValue: 100
   _maxValue: 100
+  _arrivedLatePenalty: 0
+  _deductionDuringEveningActivities: 0
+  _deductionDuringWork: 1
+  _additionDuringLunchBreak: 5
+  _additionDuringEveningActivity: 5
+  _additionDuringSleep: 10

@@ -1,8 +1,10 @@
 using NUnit.Framework;
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 public class DataManager : MonoBehaviour
 {
@@ -10,216 +12,146 @@ public class DataManager : MonoBehaviour
     [Header("Set up")]
     [SerializeField] private int _dayNum;
     [SerializeField] private float _dayDuration;
+    private int _currentDayNum = 0;
+    private bool _isTheEndOfWeek, _gameCompleted;
 
-    // Base stats - cleaned up
-    [SerializeField] private StatParentRuntime _moneyBaseData;
+    // Base stats
+    [Header("Stats")]
+    [SerializeField] private StatParentData _moneyBaseData;
     [SerializeField] private MultiplierRelatedStatsData _healthBaseData;
     [SerializeField] private MultiplierRelatedStatsData _sanityBaseData;
 
     private StatParentRuntime _moneyRuntimeData;
-    private MultiplierRelatedStatsData _healthRuntimeData;
-    private MultiplierRelatedStatsData _sanityRuntimeData;
+    private MultiplierRelatedStatsRuntime _healthRuntimeData;
+    private MultiplierRelatedStatsRuntime _sanityRuntimeData;
 
-
-    //  QTE
-    // QTEController.cs
-    [Header("QTE")]
-    [SerializeField] int _QTEInputNum;
-    private char[] _QTECharArr = { 'W', 'A', 'S', 'D' };
-    private List<char> _QTEGeneratedInputCombination = new List<char>();
-    private List<char> _QTEUserInputCombination = new List<char>();
-    private int _currentQTEIndex;
-    private bool _QTEAvailable;
+    //  Other stats
+    [SerializeField] private int _baseWorkPoints;
 
     //  Work quotas
-    [Header("Work quotas\' related stats")]
-    [SerializeField] private List<WorkQuotaData> _workQuotaDataList;
-    private List<WorkQuotaRuntime> _workQuotaRuntimeList = new List<WorkQuotaRuntime>();
-
-    //  Work quotas - cleaned up
+    [Header("Work quotas")]
     [SerializeField] private WorkQuotaData _dailyWorkQuotaBaseData;
     [SerializeField] private WorkQuotaData _weeklyWorkQuotaBaseData;
 
     private WorkQuotaRuntime _dailyWorkQuotaRuntimeData;
     private WorkQuotaRuntime _weeklyWorkQuotaRuntimeData;
 
+    //  Events
+    public static event Action<int, int, int> OnStatsChanged;
+    public static event Action<int, int> OnWorkProgressChanged;
+    public static event Action<int, int> OnWorkQuotaChanged;
 
-    // end
-    [Header("Managers")]
-    [SerializeField] GameManager _gameManager;
+    public static event Action<bool, int, int, int> OnGameEnd;
 
-    private void Awake()
+    private void Start()
     {
+        _gameCompleted = false;
 
-    }
-
-    private void InitializeStatData()
-    }
-        
-    }
-
-    private void InitializeWorkQuotaData()
-    {
-        
+        InitialiseStatData();
+        InitialiseWorkQuotaData();
     }
 
     private void OnEnable()
     {
-        InputHandler.WASDEntered += HandleSequenceQTEInput;
+        QTEHandler.OnCameToWorkLate += HandleOnCameToWorkLate;
 
-        GameManager.OnMorning += HandlingOnMorning;
-        GameManager.OnWorkingBeforeNoon += HandlingOnWorkingBeforeNoon;
-        GameManager.OnWorkStatsChange += HandlingOnWorkStatsChange;
-        GameManager.OnEveningActivitiesStatsChange += HandlingOnEveningActivitiesStatsChange;
-        GameManager.OnRestingStatsChange += HandlingOnRestingStatsChange;
+        GameManager.OnWorkingBeforeNoon += HandleOnWorkingBeforeNoon;
+        GameManager.OnWorkStatsChange += HandleOnWorkStatsChange;
+        GameManager.OnEveningActivitiesStatsChange += HandleOnEveningActivitiesStatsChange;
+        GameManager.OnRestingStatsChange += HandleOnRestingStatsChange;
+        GameManager.OnDayEnd += HandleOnDayEnd;
     }
 
     private void OnDisable()
     {
-        InputHandler.WASDEntered -= HandleSequenceQTEInput;
+        QTEHandler.OnCameToWorkLate -= HandleOnCameToWorkLate;
 
-        GameManager.OnMorning -= HandlingOnMorning;
-        GameManager.OnWorkingBeforeNoon -= HandlingOnWorkingBeforeNoon;
-        GameManager.OnWorkStatsChange += HandlingOnWorkStatsChange;
-        GameManager.OnEveningActivitiesStatsChange -= HandlingOnEveningActivitiesStatsChange;
-        GameManager.OnRestingStatsChange -= HandlingOnRestingStatsChange;
+        GameManager.OnWorkingBeforeNoon -= HandleOnWorkingBeforeNoon;
+        GameManager.OnWorkStatsChange += HandleOnWorkStatsChange;
+        GameManager.OnEveningActivitiesStatsChange -= HandleOnEveningActivitiesStatsChange;
+        GameManager.OnRestingStatsChange -= HandleOnRestingStatsChange;
+        GameManager.OnDayEnd -= HandleOnDayEnd;
     }
 
     //  Getters
     public float GetDayDuration() => _dayDuration;
     public int GetDayNum() => _dayNum;
-    public List<StatParentRuntime> GetStatsRuntimeDataList() => _statsRuntimeDataList;
-    public int GetMoneyDeductionDuringEveningActivities() => _moneyDeductionDuringEveningActivities;
+    public StatParentRuntime GetMoneyRuntimeData() => _moneyRuntimeData;
+    public MultiplierRelatedStatsRuntime GetHealthRuntimeData() => _healthRuntimeData;
+    public MultiplierRelatedStatsRuntime GetSanityRuntimeData() => _sanityRuntimeData;
+    public int GetCurrentDayNum() => _currentDayNum;
 
     //  Time period handlers
-    private void HandlingOnMorning(bool flag)
+    private void HandleOnWorkingBeforeNoon(bool flag, bool firstDay)
     {
-        EnablingQTE(flag);
-    }
-
-    private void HandlingOnWorkingBeforeNoon(bool flag, bool firstDay)
-    {
-        DisablingQTE(flag);
         if (!firstDay)
         {
             CheckWorkQuota();
+            InitialiseWorkQuota();
         }
-        InitialiseWorkQuota(firstDay);
+    }
+
+    private void HandleOnDayEnd()
+    {
+        _currentDayNum++;
+        _isTheEndOfWeek = _currentDayNum % 7 == 0;
+
+        if (_currentDayNum > _dayNum) {
+            _gameCompleted = true;
+
+            OnGameEnd(_gameCompleted, (int)_moneyRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetCurrentValue());
+        }
     }
 
     //  Stats change handlers
-    private void HandlingOnWorkStatsChange()
-    {
-        foreach (WorkQuotaRuntime workQuotaRuntimeData in _workQuotaRuntimeList)
-        {
-            workQuotaRuntimeData.IncreaseCurrentWorkProgress(GetWorkQuotaValue());
-        }
-        healthMultiplierData.DecreaseValue(_healthDeductionDuringWork);
-        sanityMultiplierData.DecreaseValue(_sanityDeductionDuringWork);
+    private void HandleOnCameToWorkLate() {
+        _moneyRuntimeData.DecreaseValue(_moneyRuntimeData.GetArrivedLatePenalty());
+        _sanityRuntimeData.DecreaseValue(_sanityRuntimeData.GetArrivedLatePenalty());
+
+        UponStatsChanged();
     }
 
-
-
-    private int GetWorkQuotaValue()
+    private void HandleOnWorkStatsChange()
     {
-        return (int)Mathf.Round(_baseWorkPoints * healthMultiplierData.GetWorkPointsMultiplier() * sanityMultiplierData.GetWorkPointsMultiplier());
+        _dailyWorkQuotaRuntimeData.IncreaseCurrentWorkProgress(GetWorkProgressIncrementalValue());
+        _weeklyWorkQuotaRuntimeData.IncreaseCurrentWorkProgress(GetWorkProgressIncrementalValue());
+
+        _healthRuntimeData.DecreaseValue(_healthRuntimeData.GetDeductionDuringWork());
+        _sanityRuntimeData.DecreaseValue(_sanityRuntimeData.GetDeductionDuringWork());
+
+        UponStatsChanged();
+        OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
     }
 
-    private void HandlingOnEveningActivitiesStatsChange(bool workingOut, bool hangingOut)
+    private void HandleOnEveningActivitiesStatsChange(bool workingOut, bool hangingOut)
     {
         if (workingOut)
         {
-            healthMultiplierData.DecreaseValue(_healthAdditionDuringWorkout);
+            _healthRuntimeData.GainValue(_healthRuntimeData.GetAdditionDuringEveningActivity());
         }
         else if (hangingOut)
         {
-            sanityMultiplierData.DecreaseValue(_sanityAdditionDuringHangout);
+            _sanityRuntimeData.GainValue(_sanityRuntimeData.GetAdditionDuringEveningActivity());
         }
-        _statsRuntimeDataList[0].DecreaseValue(_moneyDeductionDuringEveningActivities);
+        _moneyRuntimeData.DecreaseValue(_moneyRuntimeData.GetDeductionDuringEveningActivities());
+
+        UponStatsChanged();
     }
 
-    private void HandlingOnRestingStatsChange(bool havingLunchBreak, bool sleeping)
+    private void HandleOnRestingStatsChange(bool havingLunchBreak, bool sleeping)
     {
         if (havingLunchBreak)
         {
-            healthMultiplierData.GainValue(_healthAdditionDuringSleep);
-            sanityMultiplierData.GainValue(_sanityAdditionDuringSleep);
+            _healthRuntimeData.GainValue(_healthRuntimeData.GetAdditionDuringSleep());
+            _sanityRuntimeData.GainValue(_sanityRuntimeData.GetAdditionDuringSleep());
         }
         else if (sleeping)
         {
-            healthMultiplierData.GainValue(_healthAdditionDuringLunchBreak);
-            _statsRuntimeDataList[2].GainValue(_sanityAdditionDuringLunchBreak);
-        }
-    }
-
-    //  QTE related methods
-    private void EnablingQTE(bool flag)
-    {
-        _QTEAvailable = flag;
-        InitialiseQTEData();
-        GenerateSequenceQTECombination();
-    }
-
-    private void DisablingQTE(bool flag)
-    {
-        _QTEAvailable = flag;
-
-        bool cameToWorkOnTime = CheckSequenceQTEInputs();
-        if (!cameToWorkOnTime)
-        {
-            _statsRuntimeDataList[0].DecreaseValue(_moneyPenalty);
-            _statsRuntimeDataList[2].DecreaseValue(_sanityPenalty);
-            //  trigger event - UI boss scolds
-        }
-    }
-
-    private void InitialiseQTEData()
-    {
-        if (_currentQTEIndex != 0)
-        {
-            _currentQTEIndex = 0;
-        }
-        if (_QTEGeneratedInputCombination.Count > 0)
-        {
-            _QTEGeneratedInputCombination.Clear();
+            _healthRuntimeData.GainValue(_healthRuntimeData.GetAdditionDuringLunchBreak());
+            _sanityRuntimeData.GainValue(_sanityRuntimeData.GetAdditionDuringLunchBreak());
         }
 
-        if (_QTEUserInputCombination.Count > 0)
-        {
-            _QTEUserInputCombination.Clear();
-        }
-    }
-
-    private void GenerateSequenceQTECombination()
-    {
-        for (int i = 0; i < _QTEInputNum; i++)
-        {
-            _QTEGeneratedInputCombination.Add(_QTECharArr[UnityEngine.Random.Range(0, _QTECharArr.Length - 1)]);
-        }
-
-        //  trigger UI event - spawn UI boxes template (container with text: char value)
-    }
-
-    private void HandleSequenceQTEInput(char input)
-    {
-        if (_QTEAvailable && _currentQTEIndex < _QTEGeneratedInputCombination.Count)
-        {
-            if (input == _QTEGeneratedInputCombination[_currentQTEIndex])
-            {
-                _QTEUserInputCombination.Add(input);
-                _currentQTEIndex++;
-                //  trigger UI event - Change color of current UI box to green then destroy it after 0.5s
-            }
-            else
-            {
-                //  trigger UI event - Change image color of UI box to red
-            }
-        }
-    }
-
-    private bool CheckSequenceQTEInputs()
-    {
-        return (_QTEUserInputCombination.Count == _QTEGeneratedInputCombination.Count) ? true : false;
+        UponStatsChanged();
     }
 
     //  Work Quota related methods
@@ -231,59 +163,121 @@ public class DataManager : MonoBehaviour
 
     private void CheckDailyWorkQuota()
     {
-        if (_workQuotaRuntimeList[0].GetCurrentWorkProgress() >= _workQuotaRuntimeList[0].GetCurrentWorkQuota())
+        if (_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress() >= _dailyWorkQuotaRuntimeData.GetCurrentWorkQuota())
         {
-            _statsRuntimeDataList[0].GainValue(_workQuotaRuntimeList[0].GetMoneyPoints());
-            _statsRuntimeDataList[2].GainValue(_workQuotaRuntimeList[0].GetSanityAdditionUponQuotaMet());
-            _workQuotaRuntimeList[0].TaskCompleted();
+            _sanityRuntimeData.GainValue(_dailyWorkQuotaRuntimeData.GetSanityAdditionUponQuotaMet());
+            _dailyWorkQuotaRuntimeData.TaskCompleted();
         }
         else
         {
-            _statsRuntimeDataList[0].GainValue((int)Mathf.Round(_workQuotaRuntimeList[0].GetMoneyPoints() * ((float)_workQuotaRuntimeList[0].GetCurrentWorkProgress() / _workQuotaRuntimeList[0].GetCurrentWorkQuota())));
-            _statsRuntimeDataList[2].DecreaseValue(_workQuotaRuntimeList[0].GetSanityDeductionUponQuotaFailed());
-
+            _sanityRuntimeData.DecreaseValue(_dailyWorkQuotaRuntimeData.GetSanityDeductionUponQuotaFailed());
         }
+        _moneyRuntimeData.GainValue(CalculateMoneyReward(_dailyWorkQuotaRuntimeData));
+
+        UponStatsChanged();
     }
 
     private void CheckWeeklyWorkQuota()
     {
-        if (!IsEndOfTheWeek)
+        if (!_isTheEndOfWeek)
             return;
 
-        if (_workQuotaRuntimeList[1].GetCurrentWorkProgress() >= _workQuotaRuntimeList[1].GetCurrentWorkQuota())
+        if (_weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress() >= _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota())
         {
-            _statsRuntimeDataList[0].GainValue(_workQuotaRuntimeList[1].GetMoneyPoints());
-            _statsRuntimeDataList[2].GainValue(_workQuotaRuntimeList[1].GetSanityAdditionUponQuotaMet());
-            _workQuotaRuntimeList[0].TaskCompleted();
+            _sanityRuntimeData.GainValue(_weeklyWorkQuotaRuntimeData.GetSanityAdditionUponQuotaMet());
+            _weeklyWorkQuotaRuntimeData.TaskCompleted();
         }
         else
         {
-            _statsRuntimeDataList[0].GainValue((int)Mathf.Round(_workQuotaRuntimeList[1].GetMoneyPoints() * ((float)_workQuotaRuntimeList[1].GetCurrentWorkProgress() / _workQuotaRuntimeList[0].GetCurrentWorkQuota())));
-            _statsRuntimeDataList[2].DecreaseValue(_workQuotaRuntimeList[1].GetSanityDeductionUponQuotaFailed());
+            _sanityRuntimeData.DecreaseValue(_weeklyWorkQuotaRuntimeData.GetSanityDeductionUponQuotaFailed());
         }
+        _moneyRuntimeData.GainValue(CalculateMoneyReward(_weeklyWorkQuotaRuntimeData));
+
+        UponStatsChanged();
     }
 
-    private bool IsEndOfTheWeek => _gameManager.GetCurrentDayNum() % 7 == 0;
+    private int CalculateMoneyReward(WorkQuotaRuntime workQuota) {
+        if (workQuota.GetQuotaMet()) { 
+            return workQuota.GetMoneyPoints();
+        }
+        return (int)Mathf.Round(workQuota.GetMoneyPoints() * ((float)workQuota.GetCurrentWorkProgress() / _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota()));
+    }
 
-    private void InitialiseWorkQuota(bool firstDay)
+    private void InitialiseWorkQuota()
     {
-        if (firstDay)
-            return;
-
-        if (_workQuotaRuntimeList[0].GetQuotaMet())
+        if (_dailyWorkQuotaRuntimeData.GetQuotaMet())
         {
-            _workQuotaRuntimeList[0].IncreaseWorkQuota();
+            _dailyWorkQuotaRuntimeData.IncreaseWorkQuota();
         }
 
-        _workQuotaRuntimeList[0].InitialiseWorkProgress();
+        _dailyWorkQuotaRuntimeData.InitialiseWorkProgress();
 
-        if (!IsEndOfTheWeek)
-
+        if (!_isTheEndOfWeek)
             return;
-        if (_workQuotaRuntimeList[1].GetQuotaMet())
+
+        if (_weeklyWorkQuotaRuntimeData.GetQuotaMet())
         {
-            _workQuotaRuntimeList[1].IncreaseWorkQuota();
+            _weeklyWorkQuotaRuntimeData.IncreaseWorkQuota();
         }
-        _workQuotaRuntimeList[1].InitialiseWorkProgress();
+        _weeklyWorkQuotaRuntimeData.InitialiseWorkProgress();
+
+        //  UI
+        OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
+        OnWorkQuotaChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkQuota(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
+    }
+
+    //  Other methods
+    private void InitialiseStatData()
+    {
+        _moneyRuntimeData = new StatParentRuntime(_moneyBaseData);
+        _healthRuntimeData = new MultiplierRelatedStatsRuntime(_healthBaseData);
+        _sanityRuntimeData = new MultiplierRelatedStatsRuntime(_sanityBaseData);
+    }
+
+    private void InitialiseWorkQuotaData()
+    {
+        _dailyWorkQuotaRuntimeData = new WorkQuotaRuntime(_dailyWorkQuotaBaseData);
+        _weeklyWorkQuotaRuntimeData = new WorkQuotaRuntime(_weeklyWorkQuotaBaseData);
+    }
+
+    private int GetWorkProgressIncrementalValue()
+    {
+        return (int)Mathf.Round(_baseWorkPoints * _healthRuntimeData.GetWorkPointsMultiplier() * _sanityRuntimeData.GetWorkPointsMultiplier());
+    }
+
+    private void UponStatsChanged() {
+        if (CheckStatDepletion(_moneyRuntimeData))
+        {
+            if (CheckStatDepletion(_healthRuntimeData) && CheckStatDepletion(_sanityRuntimeData))
+            {
+                //  GameOver
+                OnGameEnd(_gameCompleted, (int)_moneyRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetCurrentValue());
+            }
+        }
+        else {
+            if (CheckStatDepletion(_healthRuntimeData)) {
+                ReplenishNonMoneyStat(_healthRuntimeData);
+            }
+
+            if (CheckStatDepletion(_sanityRuntimeData)) {
+                ReplenishNonMoneyStat(_sanityRuntimeData);
+            }
+        }
+        //  UI 
+        OnStatsChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetCurrentValue());
+    }
+
+    private bool CheckStatDepletion(StatParentRuntime stat) {
+        if (stat.GetCurrentValue() == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private void ReplenishNonMoneyStat(MultiplierRelatedStatsRuntime stat) {
+        if (_moneyRuntimeData.GetCurrentValue() >= _moneyRuntimeData.GetReplenishCost()) {
+            _moneyRuntimeData.DecreaseValue(_moneyRuntimeData.GetReplenishCost());
+            stat.GainValue(stat.GetReplenishValueUponDepletion());
+        }
     }
 }

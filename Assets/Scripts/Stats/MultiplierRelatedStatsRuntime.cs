@@ -5,7 +5,7 @@ public class MultiplierRelatedStatsRuntime : StatParentRuntime
 {
     //  Private fields
     protected float _workPointsMultiplier;
-    private int _deductionDuringWork, _additionDuringLunchBreak, _additionDuringEveningActivity, _additionDuringSleep;
+    private int _deductionDuringWork, _additionDuringLunchBreak, _additionDuringEveningActivity, _additionDuringSleep, _replenishValueUponDepletion;
 
     //  Constructor
     public MultiplierRelatedStatsRuntime(MultiplierRelatedStatsData data) : base(data) {
@@ -14,6 +14,7 @@ public class MultiplierRelatedStatsRuntime : StatParentRuntime
         _additionDuringLunchBreak = data.GetAdditionDuringLunchBreak();
         _additionDuringEveningActivity = data.GetAdditionDuringEveningActivity();
         _additionDuringSleep = data.GetAdditionDuringSleep();
+        _replenishValueUponDepletion = data.GetReplenishValueUponDepletion();
     }
 
     //  Getters
@@ -22,6 +23,7 @@ public class MultiplierRelatedStatsRuntime : StatParentRuntime
     public int GetAdditionDuringLunchBreak() => _additionDuringLunchBreak;
     public int GetAdditionDuringEveningActivity() => _additionDuringEveningActivity;
     public int GetAdditionDuringSleep() => _additionDuringSleep;
+    public int GetReplenishValueUponDepletion () => _replenishValueUponDepletion;
 
     //  Public methods
     public override void GainValue(float value)

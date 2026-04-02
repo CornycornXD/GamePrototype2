@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseValue: 500
   _maxValue: 1000
+  _arrivedLatePenalty: 40
+  _deductionDuringEveningActivities: 2

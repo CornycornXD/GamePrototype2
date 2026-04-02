@@ -9,19 +9,19 @@ public class GameManager : MonoBehaviour
     private float _dayDuration, _timer, _workingStateTimer, _workingOutStateTimer, _hangingOutStateTimer;
 
     //  General game set-up flag
-    private bool _gameStarted, _firstDay;
+    private bool _gameStarted, _firstDay, _gameCompleted;
 
     //  Time period flags
     private bool _morning, _workingBeforeNoon, _lunchBreak, _workingAfterNoon, _evening, _night, _working;
 
     //  Activity state flags
-    private bool _workingOut, _hangingOut;
+    private bool _workingOut, _hangingOut, _wokeUpDuringMorning;
 
     //  Event flags
-    private bool _onMorningTriggered, _onWorkingBeforeNoonTriggered; 
+    private bool _onMorningTriggered, _onWorkingBeforeNoonTriggered;
 
     [SerializeField] private float _firstDayStartingTime;
-    
+
     [SerializeField] private DataManager _dataManager;
 
     public static event Action<bool> OnMorning;
@@ -29,25 +29,33 @@ public class GameManager : MonoBehaviour
 
     public static event Action<bool, bool, bool> OnWork;
     public static event Action OnWorkStatsChange;
-    
+
     public static event Action<bool, bool> OnEveningActivities;
     public static event Action<bool, bool> OnEveningActivitiesStatsChange;
 
     public static event Action<bool, bool> OnRestingStatsChange;
 
-    public static event Action<int> OnDayEnd;
-    public static event Action<List<StatParentRuntime>> OnGameEnd;
+    public static event Action OnDayEnd;
 
     public int GetCurrentDayNum() => _currentDayNum;
+    public bool GetGameCompleted() => _gameCompleted;
 
     private void OnEnable()
     {
         InputHandler.OnClickPerformed += HandleClick;
+
+        QTEHandler.OnWakingUp += HandleOnWakingUp;
+
+        DataManager.OnGameEnd += HandleOnGameEnd;
     }
 
     private void OnDisable()
     {
         InputHandler.OnClickPerformed -= HandleClick;
+
+        QTEHandler.OnWakingUp -= HandleOnWakingUp;
+
+        DataManager.OnGameEnd += HandleOnGameEnd;
     }
 
     private void Start()
@@ -56,6 +64,10 @@ public class GameManager : MonoBehaviour
         _dayDuration = _dataManager.GetDayDuration();
         _timer = _firstDayStartingTime;
         Time.timeScale = 0f;
+
+        //  Initialise game state flags
+        _firstDay = true;
+        _gameCompleted = false;
 
         //  Initialise time period flags
         _morning = false;
@@ -76,6 +88,9 @@ public class GameManager : MonoBehaviour
         {
             _night = false;
             _morning = true;
+
+            _wokeUpDuringMorning = false;
+
             if (!_onMorningTriggered) {
                 _onMorningTriggered = true;
                 OnMorning?.Invoke(_morning);
@@ -85,6 +100,11 @@ public class GameManager : MonoBehaviour
         {
             _morning = false;
             _workingBeforeNoon = true;
+
+            if (!_wokeUpDuringMorning) {
+                _wokeUpDuringMorning = true;
+            }
+
             if (!_onWorkingBeforeNoonTriggered)
             {
                 _onWorkingBeforeNoonTriggered = true;
@@ -113,29 +133,26 @@ public class GameManager : MonoBehaviour
         }
 
         if (_timer >= _dayDuration) {
-            if (_currentDayNum <= _dataManager.GetDayNum())
+            if (_dataManager.GetCurrentDayNum() <= _dataManager.GetDayNum())
             {
                 if (_firstDay)
                 {
                     _firstDay = false;
                 }
 
-                _currentDayNum++;
-                
                 _timer = 0f;
 
                 _onMorningTriggered = false;
 
                 _onWorkingBeforeNoonTriggered = false;
-            }
-            else {
-                Time.timeScale = 0;
-                OnGameEnd?.Invoke(_dataManager.GetStatsRuntimeDataList());
+
+                OnDayEnd?.Invoke();
             }
         }
         _timer += Time.deltaTime;
     }
 
+    //  Handlers
     private void HandleClick(int mouseValue) {
         if (mouseValue == 0)
         {
@@ -145,39 +162,54 @@ public class GameManager : MonoBehaviour
                 _gameStarted = true;
             }
             else {
-                if (!_morning) {
-                    if (!_evening)
+                if (_morning) {
+                    return;
+                }
+
+                if (!_evening)
+                {
+                    StartCoroutine(EnableWorkingState());
+                }
+                else
+                {
+                    if (_dataManager.GetMoneyRuntimeData().GetCurrentValue() >= _dataManager.GetMoneyRuntimeData().GetDeductionDuringEveningActivities())
                     {
-                        StartCoroutine(EnableWorkingState());
-                    }
-                    else
-                    {
-                        if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _dataManager.GetMoneyDeductionDuringEveningActivities()) {
-                            StartCoroutine(EnableWorkingOutState());
-                        }
+                        StartCoroutine(EnableWorkingOutState());
                     }
                 }
             }
         }
         else {
-            if (_evening)
+            if (!_evening) {
+                return;
+            }
+
+            if (_dataManager.GetMoneyRuntimeData().GetCurrentValue() >= _dataManager.GetMoneyRuntimeData().GetDeductionDuringEveningActivities())
             {
-                if (_dataManager.GetStatsRuntimeDataList()[0].GetCurrentValue() >= _dataManager.GetMoneyDeductionDuringEveningActivities())
-                {
-                    StartCoroutine(EnableHangingOutState());
-                }
+                StartCoroutine(EnableHangingOutState());
             }
         }
     }
 
+    private void HandleOnWakingUp() {
+        if (!_wokeUpDuringMorning) {
+            _wokeUpDuringMorning = true;
+        }
+    }
+
+    private void HandleOnGameEnd(bool gameCompleted, int money, int health, int sanity) {
+        Time.timeScale = 0f;
+    }
+
+    //  States
     private IEnumerator EnableWorkingState() {
         _workingStateTimer = 0f;
         OnWorkStatsChange?.Invoke();
-        if (!_working) {
+        if (!_working)
+        {
             _working = true;
             StartCoroutine(WorkingState());
         }
-        _working = true;
         while (_workingStateTimer < 1f) {
             _workingStateTimer += Time.deltaTime;
             yield return null;
@@ -236,8 +268,11 @@ public class GameManager : MonoBehaviour
     //  fix this sht
     private IEnumerator RestingState(bool havingLunchBreak, bool sleeping) {
         float passivePointsTimer = 0f;
-        while (!_working )
+        while (!_working) 
         {
+            if (_wokeUpDuringMorning) {
+                break;
+            }
             if (passivePointsTimer < 1)
             {
                 passivePointsTimer += Time.deltaTime;
@@ -246,7 +281,14 @@ public class GameManager : MonoBehaviour
             else
             {
                 passivePointsTimer = 0f;
-                OnRestingStatsChange?.Invoke(havingLunchBreak, sleeping); 
+                if (_morning)
+                {
+                    OnRestingStatsChange?.Invoke(havingLunchBreak, _morning);
+                }
+                else {
+                    OnRestingStatsChange?.Invoke(havingLunchBreak, sleeping);
+                }
+
             }
         }
     }

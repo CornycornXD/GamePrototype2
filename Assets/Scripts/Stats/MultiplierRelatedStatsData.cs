@@ -8,10 +8,12 @@ public class MultiplierRelatedStatsData : StatParentData
     [SerializeField] int _additionDuringLunchBreak;
     [SerializeField] int _additionDuringEveningActivity;
     [SerializeField] int _additionDuringSleep;
+    [SerializeField] int _replenishValueUponDepletion;
 
     //  Getters
     public int GetDeductionDuringWork() => _deductionDuringWork;
     public int GetAdditionDuringLunchBreak() => _additionDuringLunchBreak;
     public int GetAdditionDuringEveningActivity() => _additionDuringEveningActivity;
     public int GetAdditionDuringSleep() => _additionDuringSleep;
+    public int GetReplenishValueUponDepletion() => _replenishValueUponDepletion;
 }

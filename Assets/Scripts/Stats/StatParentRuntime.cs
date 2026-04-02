@@ -4,7 +4,7 @@ public class StatParentRuntime
 {
     //  Private fields
     protected float _currentValue, _maxValue;
-    protected int _arrivedLatePenalty, _deductionDuringEveningActivities;
+    protected int _arrivedLatePenalty, _deductionDuringEveningActivities, _replenishCost;
 
     //  Constructor
     public StatParentRuntime(StatParentData data) {
@@ -12,12 +12,14 @@ public class StatParentRuntime
         _maxValue = data.GetMaxValue();
         _arrivedLatePenalty = data.GetArrivedLatePenalty();
         _deductionDuringEveningActivities = data.GetDeductionDuringEveningActivities();
+        _replenishCost = data.GetReplenishCost();
     }
 
     //  Getter
     public float GetCurrentValue() => _currentValue;
     public int GetArrivedLatePenalty() => _arrivedLatePenalty;
     public int GetDeductionDuringEveningActivities() => _deductionDuringEveningActivities;
+    public int GetReplenishCost() => _replenishCost;
 
     //  Public methods
     public virtual void GainValue(float value) {
