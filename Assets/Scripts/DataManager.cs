@@ -37,9 +37,14 @@ public class DataManager : MonoBehaviour
     private WorkQuotaRuntime _weeklyWorkQuotaRuntimeData;
 
     //  Events
-    public static event Action<int, int, int> OnStatsChanged;
+
+    public static event Action<int, int> OnMoneyChanged;
+    public static event Action<int, int> OnHealthChanged;
+    public static event Action<int, int> OnSanityChanged;
+
     public static event Action<int, int> OnWorkProgressChanged;
-    public static event Action<int, int> OnWorkQuotaChanged;
+    public static event Action<int> OnDailyWorkQuotaChanged;
+    public static event Action<int> OnWeeklyWorkQuotaChanged;
 
     public static event Action<bool, int, int, int> OnGameEnd;
 
@@ -108,6 +113,9 @@ public class DataManager : MonoBehaviour
         _moneyRuntimeData.DecreaseValue(_moneyRuntimeData.GetArrivedLatePenalty());
         _sanityRuntimeData.DecreaseValue(_sanityRuntimeData.GetArrivedLatePenalty());
 
+        OnMoneyChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_moneyRuntimeData.GetMaxValue());
+        OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
+
         UponStatsChanged();
     }
 
@@ -119,8 +127,12 @@ public class DataManager : MonoBehaviour
         _healthRuntimeData.DecreaseValue(_healthRuntimeData.GetDeductionDuringWork());
         _sanityRuntimeData.DecreaseValue(_sanityRuntimeData.GetDeductionDuringWork());
 
-        UponStatsChanged();
         OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
+
+        OnHealthChanged?.Invoke((int)_healthRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetMaxValue());
+        OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
+
+        UponStatsChanged();
     }
 
     private void HandleOnEveningActivitiesStatsChange(bool workingOut, bool hangingOut)
@@ -128,12 +140,19 @@ public class DataManager : MonoBehaviour
         if (workingOut)
         {
             _healthRuntimeData.GainValue(_healthRuntimeData.GetAdditionDuringEveningActivity());
+
+            OnHealthChanged?.Invoke((int)_healthRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetMaxValue());
         }
         else if (hangingOut)
         {
             _sanityRuntimeData.GainValue(_sanityRuntimeData.GetAdditionDuringEveningActivity());
+
+            OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
         }
+
         _moneyRuntimeData.DecreaseValue(_moneyRuntimeData.GetDeductionDuringEveningActivities());
+
+        OnMoneyChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_moneyRuntimeData.GetMaxValue());
 
         UponStatsChanged();
     }
@@ -150,6 +169,9 @@ public class DataManager : MonoBehaviour
             _healthRuntimeData.GainValue(_healthRuntimeData.GetAdditionDuringLunchBreak());
             _sanityRuntimeData.GainValue(_sanityRuntimeData.GetAdditionDuringLunchBreak());
         }
+
+        OnHealthChanged?.Invoke((int)_healthRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetMaxValue());
+        OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
 
         UponStatsChanged();
     }
@@ -172,7 +194,12 @@ public class DataManager : MonoBehaviour
         {
             _sanityRuntimeData.DecreaseValue(_dailyWorkQuotaRuntimeData.GetSanityDeductionUponQuotaFailed());
         }
+
         _moneyRuntimeData.GainValue(CalculateMoneyReward(_dailyWorkQuotaRuntimeData));
+
+        OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
+        OnMoneyChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_moneyRuntimeData.GetMaxValue());
+
 
         UponStatsChanged();
     }
@@ -191,7 +218,11 @@ public class DataManager : MonoBehaviour
         {
             _sanityRuntimeData.DecreaseValue(_weeklyWorkQuotaRuntimeData.GetSanityDeductionUponQuotaFailed());
         }
+
         _moneyRuntimeData.GainValue(CalculateMoneyReward(_weeklyWorkQuotaRuntimeData));
+
+        OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
+        OnMoneyChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_moneyRuntimeData.GetMaxValue());
 
         UponStatsChanged();
     }
@@ -212,6 +243,8 @@ public class DataManager : MonoBehaviour
 
         _dailyWorkQuotaRuntimeData.InitialiseWorkProgress();
 
+        OnDailyWorkQuotaChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkQuota());
+
         if (!_isTheEndOfWeek)
             return;
 
@@ -219,11 +252,13 @@ public class DataManager : MonoBehaviour
         {
             _weeklyWorkQuotaRuntimeData.IncreaseWorkQuota();
         }
+
         _weeklyWorkQuotaRuntimeData.InitialiseWorkProgress();
+
+        OnWeeklyWorkQuotaChanged?.Invoke(_weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
 
         //  UI
         OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
-        OnWorkQuotaChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkQuota(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
     }
 
     //  Other methods
@@ -257,14 +292,15 @@ public class DataManager : MonoBehaviour
         else {
             if (CheckStatDepletion(_healthRuntimeData)) {
                 ReplenishNonMoneyStat(_healthRuntimeData);
+                OnHealthChanged?.Invoke((int)_healthRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetMaxValue());
             }
 
             if (CheckStatDepletion(_sanityRuntimeData)) {
                 ReplenishNonMoneyStat(_sanityRuntimeData);
+                OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
             }
+            OnMoneyChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_moneyRuntimeData.GetMaxValue());
         }
-        //  UI 
-        OnStatsChanged?.Invoke((int)_moneyRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetCurrentValue());
     }
 
     private bool CheckStatDepletion(StatParentRuntime stat) {

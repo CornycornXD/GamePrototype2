@@ -43,7 +43,6 @@ public class UIManager : MonoBehaviour
     //  Others
     private List<GameObject> _QTEPrefabsList = new List<GameObject>();
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void OnEnable()
     {
         DataManager.OnStatsChanged += HandleOnStatsChanged;
@@ -67,7 +66,7 @@ public class UIManager : MonoBehaviour
         QTEHandler.OnCameToWorkLate -= HandleOnCameToWorkLate;
     }
 
-    private void HandleOnStatsChanged() { 
+    private void HandleOnStatsChanged() {
          
     }
 

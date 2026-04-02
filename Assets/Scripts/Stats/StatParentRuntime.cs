@@ -17,6 +17,7 @@ public class StatParentRuntime
 
     //  Getter
     public float GetCurrentValue() => _currentValue;
+    public float GetMaxValue() => _maxValue;
     public int GetArrivedLatePenalty() => _arrivedLatePenalty;
     public int GetDeductionDuringEveningActivities() => _deductionDuringEveningActivities;
     public int GetReplenishCost() => _replenishCost;
