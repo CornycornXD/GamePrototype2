@@ -7453,6 +7453,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1746554588}
+  - component: {fileID: 1746554589}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -7475,6 +7476,44 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1746554589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746554587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f96004ec988519741b43163fd4865529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _morningUIData: {fileID: 0}
+  _workBeforeNoonUIData: {fileID: 0}
+  _lunchBreakUIData: {fileID: 0}
+  _workAfterNoonUIData: {fileID: 0}
+  _eveningUIData: {fileID: 0}
+  _nightUIData: {fileID: 0}
+  _dayNumberText: {fileID: 1936425942}
+  _currentTimeText: {fileID: 1272971256}
+  _dailyWorkQuotaCurrentValueText: {fileID: 1401454518}
+  _weeklyWorkQuotaCurrentValueText: {fileID: 1226285790}
+  _dailyWorkQuotaValueProgressTrackerBar: {fileID: 2100645845}
+  _weeklyWorkQuotaValueProgressTrackerBar: {fileID: 281361250}
+  _moneyCurrentValueText: {fileID: 1915910635}
+  _healthCurrentValueText: {fileID: 721303551}
+  _sanityCurrentValueText: {fileID: 1632464197}
+  _moneyStatIcon: {fileID: 190043128}
+  _healthStatIcon: {fileID: 1840714136}
+  _sanityStatIcon: {fileID: 858475913}
+  _moneyValueTrackerBar: {fileID: 240030380}
+  _healthValueTrackerBar: {fileID: 1231472479}
+  _sanityValueTrackerBar: {fileID: 1203480794}
+  _timePeriodTitleText: {fileID: 1002650736}
+  _timeRangeText: {fileID: 23822482}
+  _timePeriodIcon: {fileID: 248578379}
+  _circularTrackerImage: {fileID: 560942545}
+  _QTECharContainerPrefab: {fileID: 0}
 --- !u!1 &1765673781
 GameObject:
   m_ObjectHideFlags: 0

@@ -42,9 +42,8 @@ public class DataManager : MonoBehaviour
     public static event Action<int, int> OnHealthChanged;
     public static event Action<int, int> OnSanityChanged;
 
-    public static event Action<int, int> OnWorkProgressChanged;
-    public static event Action<int> OnDailyWorkQuotaChanged;
-    public static event Action<int> OnWeeklyWorkQuotaChanged;
+    public static event Action<int, int> OnDailyWorkQuotaProgressChanged;
+    public static event Action<int, int> OnWeeklyWorkQuotaProgressChanged;
 
     public static event Action<bool, int, int, int> OnGameEnd;
 
@@ -127,7 +126,8 @@ public class DataManager : MonoBehaviour
         _healthRuntimeData.DecreaseValue(_healthRuntimeData.GetDeductionDuringWork());
         _sanityRuntimeData.DecreaseValue(_sanityRuntimeData.GetDeductionDuringWork());
 
-        OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
+        OnDailyWorkQuotaProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _dailyWorkQuotaRuntimeData.GetCurrentWorkQuota());
+        OnWeeklyWorkQuotaProgressChanged?.Invoke(_weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
 
         OnHealthChanged?.Invoke((int)_healthRuntimeData.GetCurrentValue(), (int)_healthRuntimeData.GetMaxValue());
         OnSanityChanged?.Invoke((int)_sanityRuntimeData.GetCurrentValue(), (int)_sanityRuntimeData.GetMaxValue());
@@ -243,7 +243,7 @@ public class DataManager : MonoBehaviour
 
         _dailyWorkQuotaRuntimeData.InitialiseWorkProgress();
 
-        OnDailyWorkQuotaChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkQuota());
+        OnDailyWorkQuotaProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _dailyWorkQuotaRuntimeData.GetCurrentWorkQuota());
 
         if (!_isTheEndOfWeek)
             return;
@@ -255,10 +255,7 @@ public class DataManager : MonoBehaviour
 
         _weeklyWorkQuotaRuntimeData.InitialiseWorkProgress();
 
-        OnWeeklyWorkQuotaChanged?.Invoke(_weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
-
-        //  UI
-        OnWorkProgressChanged?.Invoke(_dailyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress());
+        OnWeeklyWorkQuotaProgressChanged?.Invoke(_weeklyWorkQuotaRuntimeData.GetCurrentWorkProgress(), _weeklyWorkQuotaRuntimeData.GetCurrentWorkQuota());
     }
 
     //  Other methods
